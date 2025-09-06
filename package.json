@@ -1,0 +1,41 @@
+{
+  "name": "chart-markup-language",
+  "version": "1.0.0",
+  "description": "A domain-specific language for describing financial charts with bars, drawings, and technical indicators",
+  "main": "chart-markup-language.ebnf",
+  "files": [
+    "chart-markup-language.ebnf",
+    "README.md",
+    "LICENSE",
+    "examples/*.cml"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "validate": "echo \"Grammar validation would go here\"",
+    "examples": "echo \"Example files are in the examples/ directory\""
+  },
+  "keywords": [
+    "chart",
+    "markup",
+    "language",
+    "financial",
+    "trading",
+    "technical-analysis",
+    "ebnf",
+    "grammar",
+    "dsl"
+  ],
+  "author": "M D",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markdicksonjr/chart-markup-language.git"
+  },
+  "bugs": {
+    "url": "https://github.com/markdicksonjr/chart-markup-language/issues"
+  },
+  "homepage": "https://github.com/markdicksonjr/chart-markup-language#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

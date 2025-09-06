@@ -1,0 +1,90 @@
+Chart          = [MetaSection] , [SettingsSection] , [BarsSection] , [DrawingsSection] , [IndicatorsSection] ;
+
+MetaSection    = "meta:" , { MetaEntry } ;
+MetaEntry      = MetaKey , ":" , MetaValue ;
+MetaKey        = "title" | "subtitle" | "author" | "description" | "created" ;
+MetaValue      = QuotedString | DateTime ;
+Identifier     = Letter , { Letter | Digit | "_" } ;
+
+SettingsSection = "settings:" , { SettingsEntry } ;
+SettingsEntry  = "bar-type" , ":" , BarType
+               | "y-axis-precision" , ":" , Number
+               | "bar-opacity" , ":" , Number
+               | "grid" , ":" , GridConfig ;
+GridConfig     = "(" , [ GridProperties ] , ")"
+               | GridPropertiesIndented ;
+GridProperties = GridProperty , { "," , GridProperty } ;
+GridPropertiesIndented = { GridPropertyIndented } ;
+GridProperty   = "enabled=" , Boolean
+               | "line-width=" , Number
+               | "color=" , Color
+               | "opacity=" , Number ;
+GridPropertyIndented = "enabled" , "=" , Boolean
+                     | "line-width" , "=" , Number
+                     | "color" , "=" , Color
+                     | "opacity" , "=" , Number ;
+Boolean        = "true" | "false" ;
+
+BarsSection    = "bars:" , { Bar } ;
+Bar            = DateTime , "," , Number , "," , Number , "," , Number , "," , Number ;
+                 (* format: datetime, open, high, low, close *)
+
+DrawingsSection = "drawings:" , { DrawingWithStyles } ;
+DrawingWithStyles = Drawing , { StyleProperty } ;
+Drawing        = Rectangle | Line | ContinuousLine | UptickTriangle | DowntickTriangle 
+                 | UnderCircle | OverCircle | UnderNote | OverNote ;
+
+(* Drawing Types *)
+Rectangle      = "rectangle" , "(" , DateTime , "," , Price , ";" , DateTime , "," , Price , ")" ;
+Line           = "line" , "(" , DateTime , "," , Price , ";" , DateTime , "," , Price , ")" ;
+ContinuousLine = "continuous-line" , "(" , DateTime , "," , Price , ";" , DateTime , "," , Price , ")" ;
+UptickTriangle = "uptick-triangle" , "(" , DateTime , ")" ;
+DowntickTriangle = "downtick-triangle" , "(" , DateTime , ")" ;
+UnderCircle    = "undercircle" , "(" , DateTime , ")" ;
+OverCircle     = "overcircle" , "(" , DateTime , ")" ;
+UnderNote      = "undernote" , "(" , DateTime , "," , QuotedString , ")" ;
+OverNote       = "overnote" , "(" , DateTime , "," , QuotedString , ")" ;
+
+(* Indicators *)
+IndicatorsSection = "indicators:" , { Indicator } ;
+Indicator      = IndicatorName , "(" , [ Params ] , ")" ;
+IndicatorName  = "ema" | "sma" | "bollinger" | "rsi" | "macd" ;
+Params         = Param , { "," , Param } ;
+Param          = ParamName , "=" , ParamValue ;
+ParamName      = "period" | "fast" | "slow" | "signal" | "stddev" ;
+ParamValue     = Number | QuotedString ;
+
+(* Styles *)
+StyleProperty  = "border-color=" , Color
+               | "fill-color=" , Color
+               | "line-width=" , Number
+               | "line-opacity=" , Number
+               | "fill-opacity=" , Number
+               | "font-size=" , Number
+               | "font-color=" , Color
+               | "style=" , LineStyle
+               | "left-arrow=" , Boolean
+               | "right-arrow=" , Boolean ;
+
+LineStyle      = "solid" | "dashed" | "dotted" ;
+Boolean        = "true" | "false" ;
+BarType        = "candlestick" | "heikin-ashi" | "ohlc" ;
+Color          = "#" , HexDigit , HexDigit , HexDigit , [ HexDigit , HexDigit , HexDigit ] ;
+
+(* Core Types *)
+DateTime       = Year , "/" , Month , "/" , Day , " " , Hour , ":" , Minute , [ ":" , Second ] ;
+Year           = Digit , Digit , Digit , Digit ;
+Month          = Digit , Digit ;
+Day            = Digit , Digit ;
+Hour           = Digit , Digit ;
+Minute         = Digit , Digit ;
+Second         = Digit , Digit ;
+
+Price          = Number ;
+Number         = Digit , { Digit | "." } ;
+QuotedString   = '"' , { Character - '"' } , '"' ;
+
+Digit          = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+Letter         = "A".."Z" | "a".."z" ;
+HexDigit       = Digit | "A".."F" | "a".."f" ;
+Character      = ? any printable character ? ;

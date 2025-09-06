@@ -1,0 +1,67 @@
+meta:
+    title: "Technical Analysis Example"
+    author: "Technical Analyst"
+    description: "Chart with support/resistance levels and technical indicators"
+    created: "2025/01/15 11:00"
+
+settings:
+  bar-type: candlestick
+  y-axis-precision: 3
+  bar-opacity: 0.8
+
+bars:
+    2025/01/15 10:00, 1.2500, 1.2550, 1.2480, 1.2520
+    2025/01/15 10:15, 1.2520, 1.2580, 1.2500, 1.2560
+    2025/01/15 10:30, 1.2560, 1.2600, 1.2540, 1.2550
+    2025/01/15 10:45, 1.2580, 1.2620, 1.2560, 1.2600
+    2025/01/15 11:00, 1.2600, 1.2640, 1.2580, 1.2620
+
+drawings:
+    # Support level
+    continuous-line(2025/01/15 10:00,1.2480 ; 2025/01/15 11:00,1.2480)
+        style=dashed
+        border-color=#00FF00
+        line-width=2
+
+    # Resistance level
+    continuous-line(2025/01/15 10:00,1.2640 ; 2025/01/15 11:00,1.2640)
+        style=dashed
+        border-color=#FF0000
+        line-width=2
+
+    # Trend line
+    line(2025/01/15 10:00,1.2500 ; 2025/01/15 11:00,1.2620)
+        right-arrow=true
+        style=dotted
+        border-color=#0000FF
+        line-width=2
+
+    # Key reversal points
+    uptick-triangle(2025/01/15 10:15)
+        border-color=#00FF00
+        fill-color=#00FF00
+
+    downtick-triangle(2025/01/15 10:30)
+        border-color=#FF0000
+        fill-color=#FF0000
+
+    # Annotations
+    undernote(2025/01/15 10:00, "Support at 1.2480")
+        font-size=10
+        font-color=#00FF00
+
+    overnote(2025/01/15 11:00, "Resistance at 1.2640")
+        font-size=10
+        font-color=#FF0000
+
+    # Rectangle highlighting a key area
+    rectangle(2025/01/15 10:15, 1.2500 ; 2025/01/15 10:45, 1.2600)
+        border-color=#800080
+        fill-color=#800080
+        line-width=2
+        fill-opacity=0.3
+        line-opacity=0.8
+
+indicators:
+    ema(period=20)
+    ema(period=50)

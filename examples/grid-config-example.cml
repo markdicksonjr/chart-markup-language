@@ -1,0 +1,36 @@
+meta:
+    title: "Grid Configuration Example"
+    author: "Chart Developer"
+    description: "Example showing configurable grid lines"
+    created: "2025/01/15 12:00"
+
+settings:
+    bar-type: candlestick
+    grid:
+        enabled=true
+        line-width=1.0
+        color=#FF0000
+        opacity=0.5
+
+bars:
+    2025/01/15 10:00, 1.2500, 1.2550, 1.2480, 1.2520
+    2025/01/15 10:15, 1.2520, 1.2580, 1.2500, 1.2560
+    2025/01/15 10:30, 1.2560, 1.2600, 1.2540, 1.2580
+    2025/01/15 10:45, 1.2580, 1.2620, 1.2560, 1.2600
+    2025/01/15 11:00, 1.2600, 1.2640, 1.2580, 1.2620
+
+drawings:
+    # Support level
+    continuous-line(2025/01/15 10:00,1.2480 ; 2025/01/15 11:00,1.2480)
+        style=dashed
+        border-color=#00FF00
+        line-width=2
+
+    # Resistance level
+    continuous-line(2025/01/15 10:00,1.2640 ; 2025/01/15 11:00,1.2640)
+        style=dashed
+        border-color=#FF0000
+        line-width=2
+
+indicators:
+    ema(period=20)
