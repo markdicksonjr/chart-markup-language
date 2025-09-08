@@ -207,6 +207,18 @@ A Go implementation with cross-platform binary builds available for every commit
 ./cml-renderer-<platform> input.cml output.png
 ```
 
+### Python Renderer
+A Python implementation using matplotlib for chart generation:
+
+```bash
+# Install dependencies
+cd python-renderer
+pip install -r requirements.txt
+
+# Generate a chart from CML file
+python3 cml_renderer.py input.cml output.png
+```
+
 Available platforms:
 - Linux (amd64, arm64)
 - Windows (amd64, arm64) 
