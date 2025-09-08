@@ -713,6 +713,15 @@ class CMLRenderer:
         # Set tick frequency based on number of data points - MAX 8 ticks
         if hasattr(self, 'bars') and self.bars:
             num_bars = len(self.bars)
+            
+            # Special case for single bar - use a simple time range
+            if num_bars == 1:
+                single_time = mdates.date2num(self.bars[0].datetime)
+                # Set a small range around the single point
+                self.ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
+                self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
+                return
+            
             times = [mdates.date2num(bar.datetime) for bar in self.bars]
             time_range = max(times) - min(times)
             
