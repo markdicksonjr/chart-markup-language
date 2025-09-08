@@ -1,6 +1,6 @@
 # Chart Markup Language
 
-[![Build Status](https://github.com/markdicksonjr/chart-markup-language/workflows/CI/badge.svg)](https://github.com/markdicksonjr/chart-markup-language/actions)
+[![Build Status](https://github.com/markdicksonjr/chart-markup-language/actions/workflows/ci.yml/badge.svg)](https://github.com/markdicksonjr/chart-markup-language/actions)
 
 A domain-specific language for describing financial charts with bars, drawings, and technical indicators.
 
