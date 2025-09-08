@@ -1,0 +1,173 @@
+name: Build Multi-Platform Binaries
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            name: linux-amd64
+          - goos: linux
+            goarch: arm64
+            name: linux-arm64
+          - goos: windows
+            goarch: amd64
+            name: windows-amd64
+          - goos: windows
+            goarch: arm64
+            name: windows-arm64
+          - goos: darwin
+            goarch: amd64
+            name: darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            name: darwin-arm64
+          - goos: freebsd
+            goarch: amd64
+            name: freebsd-amd64
+          - goos: openbsd
+            goarch: amd64
+            name: openbsd-amd64
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Get commit info
+      id: commit
+      run: |
+        echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        echo "ref=$(echo $GITHUB_REF | sed 's/refs\/heads\///' | sed 's/refs\/tags\///')" >> $GITHUB_OUTPUT
+        echo "date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+    
+    - name: Build binary
+      working-directory: ./go-renderer
+      run: |
+        # Set version info
+        VERSION="dev-${{ steps.commit.outputs.sha }}"
+        BUILD_TIME="${{ steps.commit.outputs.date }}"
+        GIT_REF="${{ steps.commit.outputs.ref }}"
+        
+        # Build flags
+        LDFLAGS="-X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitRef=${GIT_REF}"
+        
+        # Set environment variables for cross-compilation
+        export GOOS=${{ matrix.goos }}
+        export GOARCH=${{ matrix.goarch }}
+        export CGO_ENABLED=0
+        
+        # Build the binary
+        go build -ldflags "${LDFLAGS}" -o cml-renderer-${{ matrix.name }} .
+        
+        # Add .exe extension for Windows
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          mv cml-renderer-${{ matrix.name }} cml-renderer-${{ matrix.name }}.exe
+        fi
+    
+    - name: Test binary
+      working-directory: ./go-renderer
+      run: |
+        # Only test binaries that can run on the current platform
+        if [ "${{ matrix.goos }}" = "linux" ] && [ "${{ matrix.goarch }}" = "amd64" ]; then
+          BINARY="./cml-renderer-${{ matrix.name }}"
+          
+          # Test version info
+          $BINARY --version || echo "Version flag not implemented"
+          
+          # Test with minimal example
+          if [ -f "../examples/minimal.cml" ]; then
+            mkdir -p test-output
+            $BINARY "../examples/minimal.cml" "test-output/test-${{ matrix.name }}.png"
+            echo "Binary test successful for ${{ matrix.name }}"
+          fi
+        else
+          echo "Skipping binary test for ${{ matrix.name }} (cross-compiled binary)"
+        fi
+    
+    - name: Upload binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: cml-renderer-${{ matrix.name }}
+        path: go-renderer/cml-renderer-${{ matrix.name }}*
+        retention-days: 30
+
+  create-release-assets:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+    
+    - name: Create release archive
+      run: |
+        # Create a directory for this commit's binaries
+        COMMIT_SHA=$(git rev-parse --short HEAD)
+        RELEASE_DIR="cml-renderer-${COMMIT_SHA}"
+        mkdir -p "${RELEASE_DIR}"
+        
+        # Copy all binaries to release directory
+        find ./artifacts -name "cml-renderer-*" -type f -exec cp {} "${RELEASE_DIR}/" \;
+        
+        # Create README for the release
+        chmod +x .github/scripts/create-release-readme.sh
+        .github/scripts/create-release-readme.sh
+        
+        # Create tar.gz archive
+        tar -czf "cml-renderer-${COMMIT_SHA}.tar.gz" "${RELEASE_DIR}"
+        
+        # Create zip archive for Windows users
+        zip -r "cml-renderer-${COMMIT_SHA}.zip" "${RELEASE_DIR}"
+        
+        echo "Created release archives:"
+        ls -la cml-renderer-*.tar.gz cml-renderer-*.zip
+    
+    - name: Upload release archives
+      uses: actions/upload-artifact@v4
+      with:
+        name: cml-renderer-release-${COMMIT_SHA}
+        path: |
+          cml-renderer-*.tar.gz
+          cml-renderer-*.zip
+        retention-days: 90
+
+  notify:
+    if: always()
+    needs: [build, create-release-assets]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Notify build status
+      run: |
+        if [ "${{ needs.build.result }}" = "success" ]; then
+          echo "✅ Build successful! Binaries are available in the Actions artifacts."
+          if [ "${{ needs.create-release-assets.result }}" = "success" ]; then
+            echo "📦 Release archives created and uploaded."
+          fi
+        else
+          echo "❌ Build failed. Check the logs for details."
+        fi

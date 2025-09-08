@@ -1,0 +1,179 @@
+name: CI Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-go-renderer:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Build Go renderer
+      run: |
+        cd go-renderer
+        go mod tidy
+        go build -o cml-renderer .
+    
+    - name: Test Go renderer with examples
+      run: |
+        cd go-renderer
+        mkdir -p test-output
+        
+        # Test all example files
+        for example in ../examples/*.cml; do
+          if [ -f "$example" ]; then
+            echo "Testing Go renderer with $(basename "$example")"
+            ./cml-renderer "$example" "test-output/$(basename "$example" .cml).png"
+            if [ $? -ne 0 ]; then
+              echo "Failed to render $(basename "$example")"
+              exit 1
+            fi
+          fi
+        done
+        
+        echo "All examples rendered successfully with Go renderer"
+        ls -la test-output/
+    
+    - name: Upload Go test artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: go-renderer-output
+        path: go-renderer/test-output/
+
+  test-python-renderer:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install Python dependencies
+      run: |
+        cd python-renderer
+        pip install -r requirements.txt
+    
+    - name: Test Python renderer with examples
+      run: |
+        cd python-renderer
+        mkdir -p test-output
+        
+        # Test all example files
+        chmod +x ../.github/scripts/test-python-renderer.py
+        for example in ../examples/*.cml; do
+          if [ -f "$example" ]; then
+            echo "Testing Python renderer with $(basename "$example")"
+            python3 ../.github/scripts/test-python-renderer.py "$example"
+            if [ $? -ne 0 ]; then
+              echo "Failed to render $(basename "$example")"
+              exit 1
+            fi
+          fi
+        done
+        
+        echo "All examples rendered successfully with Python renderer"
+        ls -la test-output/
+    
+    - name: Upload Python test artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: python-renderer-output
+        path: python-renderer/test-output/
+
+  validate-grammar:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Validate EBNF grammar syntax
+      run: |
+        echo "Checking EBNF grammar file exists and has content"
+        if [ ! -f "chart-markup-language.ebnf" ]; then
+          echo "EBNF grammar file not found"
+          exit 1
+        fi
+        
+        if [ ! -s "chart-markup-language.ebnf" ]; then
+          echo "EBNF grammar file is empty"
+          exit 1
+        fi
+        
+        echo "EBNF grammar file validation passed"
+        wc -l chart-markup-language.ebnf
+    
+    - name: Validate example files
+      run: |
+        echo "Checking all example files exist and have content"
+        example_count=0
+        for example in examples/*.cml; do
+          if [ -f "$example" ]; then
+            echo "Found example: $(basename "$example")"
+            if [ ! -s "$example" ]; then
+              echo "Example file $example is empty"
+              exit 1
+            fi
+            example_count=$((example_count + 1))
+          fi
+        done
+        
+        if [ $example_count -eq 0 ]; then
+          echo "No example files found"
+          exit 1
+        fi
+        
+        echo "Found $example_count example files"
+
+  lint-and-format:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Go fmt check
+      run: |
+        cd go-renderer
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "Go code is not formatted. Run 'gofmt -s -w .' to fix."
+          gofmt -s -l .
+          exit 1
+        fi
+        echo "Go code formatting check passed"
+    
+    - name: Go vet check
+      run: |
+        cd go-renderer
+        go vet ./...
+        echo "Go vet check passed"
+    
+    # - name: Python lint check
+    #   run: |
+    #     cd python-renderer
+    #     pip install flake8
+    #     flake8 --max-line-length=100 --ignore=E203,W503 *.py
+    #     echo "Python lint check passed"
