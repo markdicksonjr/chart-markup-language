@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Check if RELEASE_DIR is set
+if [ -z "$RELEASE_DIR" ]; then
+    echo "Error: RELEASE_DIR environment variable is not set"
+    exit 1
+fi
+
+# Create the directory if it doesn't exist
+mkdir -p "$RELEASE_DIR"
+
 # Create README for the release
 cat > "${RELEASE_DIR}/README.md" << 'EOF'
 # CML Renderer Binaries
